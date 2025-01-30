@@ -1,11 +1,11 @@
 {
-    "name": "coffee_shop",
-    "short_name": "coffee_shop",
+    "name": "auth_bloc",
+    "short_name": "auth_bloc",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A sample coffee shop project.",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
