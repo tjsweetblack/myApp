@@ -4,10 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 
 import '../../../core/widgets/login_and_signup_animated_form.dart';
-import '../../../core/widgets/no_internet.dart';
 import '../../../logic/cubit/auth_cubit.dart';
 import '../../../routing/routes.dart';
-import '../../../theming/colors.dart';
 import '../../../theming/styles.dart';
 
 class LoginScreen extends StatefulWidget {

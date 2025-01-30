@@ -1,16 +1,8 @@
 import 'package:auth_bloc/helpers/extensions.dart';
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:gap/gap.dart';
 
-import '../../../core/widgets/already_have_account_text.dart';
-import '../../../core/widgets/login_and_signup_animated_form.dart';
-import '../../../core/widgets/sign_in_with_google_text.dart';
-import '../../../core/widgets/terms_and_conditions_text.dart';
-import '../../../helpers/rive_controller.dart';
 import '../../../logic/cubit/auth_cubit.dart';
 import '../../../routing/routes.dart';
 import '../../../theming/styles.dart';

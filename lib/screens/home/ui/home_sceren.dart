@@ -29,6 +29,8 @@ Future<void> replicateDocument(String collection, String docId) async {
 }
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   // Fetch data from Firestore
   Future<List<Map<String, dynamic>>> _getTopPicks() async {
     var snapshot = await FirebaseFirestore.instance.collection('top_picks').get();
@@ -126,7 +128,7 @@ class HomeScreen extends StatelessWidget {
 
               var topPicks = snapshot.data!;
 
-              return Container(
+              return SizedBox(
                 height: 250,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -176,9 +178,9 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   // Navigate to Create Burger Screen
                 },
-                child: Icon(Icons.add),
                 backgroundColor: Colors.orange,
                 tooltip: 'Create Your Burger',
+                child: Icon(Icons.add),
               ),
             ),
           ),

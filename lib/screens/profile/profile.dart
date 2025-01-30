@@ -1,62 +1,48 @@
 import 'package:auth_bloc/logic/cubit/auth_cubit.dart';
+import 'package:auth_bloc/screens/login/ui/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  late TextEditingController _roleController;
-
   bool _isUpdating = false;
-  bool _hasChanges = false; // Track if user made changes
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _emailController = TextEditingController();
     _phoneController = TextEditingController();
-    _roleController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
-    _roleController.dispose();
     super.dispose();
   }
 
-  void _updateProfile(String userId) async {
-    if (!_formKey.currentState!.validate()) return;
+  void _updatePhoneNumber(String userId) async {
+    if (_phoneController.text.isEmpty) return;
 
     setState(() => _isUpdating = true);
 
     try {
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'name': _nameController.text,
-        'email': _emailController.text,
         'phoneNumber': _phoneController.text,
-        'role': _roleController.text,
       });
 
-      setState(() => _hasChanges = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully!')),
+        SnackBar(content: Text('Phone number updated successfully!')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
+        SnackBar(content: Text('Error updating phone number: $e')),
       );
     } finally {
       setState(() => _isUpdating = false);
@@ -76,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("User Profile"), backgroundColor: Colors.orange),
+      appBar: AppBar(title: const Text("User Profile", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: const Color.fromARGB(0, 255, 255, 255)),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
         builder: (context, snapshot) {
@@ -94,84 +80,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           var userData = snapshot.data!.data() as Map<String, dynamic>;
 
-          // Populate controllers with current user data
-          _nameController.text = userData['name'] ?? '';
-          _emailController.text = userData['email'] ?? '';
-          _phoneController.text = userData['phoneNumber'] ?? '';
-          _roleController.text = userData['role'] ?? '';
-
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Profile Picture
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(
-                      userData['photoURL'] ??
-                          'https://cdn4.iconfinder.com/data/icons/glyphs/24/icons_user-512.png',
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: NetworkImage(
+                    userData['photoURL'] ??
+                        'https://cdn4.iconfinder.com/data/icons/glyphs/24/icons_user-512.png',
                   ),
-                  SizedBox(height: 16),
-
-                  // Editable User Information
-                  _buildTextField("Name", _nameController),
-                  _buildTextField("Email", _emailController),
-                  _buildTextField("Phone", _phoneController),
-                  _buildTextField("Role", _roleController),
-
-                  SizedBox(height: 20),
-
-                  // Update Button (only if there are changes)
-                  if (_hasChanges)
-                    ElevatedButton(
-                      onPressed: _isUpdating ? null : () => _updateProfile(user.uid),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                        textStyle: TextStyle(fontSize: 16),
-                      ),
-                      child: _isUpdating
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text('Update Profile'),
-                    ),
-
-                  SizedBox(height: 10),
-
-                  // Logout Button
-                  ElevatedButton(
-                    onPressed: () => authCubit.signOut(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                      textStyle: TextStyle(fontSize: 16),
-                    ),
-                    child: Text('Logout'),
+                ),
+                SizedBox(height: 16),
+                Text("Name: ${userData['name'] ?? ''}", style: TextStyle(fontSize: 18)),
+                Text("Email: ${userData['email'] ?? ''}", style: TextStyle(fontSize: 18)),
+                Text("Phone: ${userData['phoneNumber'] ?? ''}", style: TextStyle(fontSize: 18)),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: InputDecoration(
+                    labelText: "Change Number",
+                    border: OutlineInputBorder(),
                   ),
-                ],
-              ),
+                  keyboardType: TextInputType.phone,
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _isUpdating ? null : () => _updatePhoneNumber(user.uid),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                  child: _isUpdating
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text('Update Phone Number'),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () async {
+                    await authCubit.signOut(); // Sign out the user
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
+                    textStyle: TextStyle(fontSize: 16),
+                  ),
+                  child: Text('Logout'),
+                ),
+              ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  // Helper function for text fields
-  Widget _buildTextField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-        ),
-        onChanged: (value) => setState(() => _hasChanges = true),
-        validator: (value) => value!.isEmpty ? '$label cannot be empty' : null,
       ),
     );
   }
