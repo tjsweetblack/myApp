@@ -1,120 +1,174 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:auth_bloc/routing/routes.dart';
+import 'package:auth_bloc/screens/create_burger/create_burger.dart';
+import 'package:auth_bloc/screens/profile/profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_offline/flutter_offline.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// ... other imports
 
-import '/helpers/extensions.dart';
-import '/routing/routes.dart';
-import '/theming/styles.dart';
-import '../../../core/widgets/app_text_button.dart';
-import '../../../core/widgets/no_internet.dart';
-import '../../../logic/cubit/auth_cubit.dart';
-import '../../../theming/colors.dart';
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  Future<List<Map<String, dynamic>>> _getTopPicks() async {
+    var snapshot =
+        await FirebaseFirestore.instance.collection('top_picks').get();
+    return snapshot.docs.map((doc) {
+      return {
+        'name': doc['name'],
+        'imageUrl': doc['imageUrl'],
+        'rating': doc['rating'],
+        'price': doc['price'],
+      };
+    }).toList();
+  }
 
-class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: OfflineBuilder(
-        connectivityBuilder: (
-          BuildContext context,
-          List<ConnectivityResult> connectivity,
-          Widget child,
-        ) {
-          final bool connected = connectivity.isNotEmpty &&
-              (connectivity.contains(ConnectivityResult.wifi) ||
-              connectivity.contains(ConnectivityResult.mobile));
-          return connected ? _homePage(context) : const BuildNoInternet();
-        },
-
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: ColorsManager.mainBlue,
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(0, 240, 240, 240),
+        elevation: 0,
+        actions: [
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(
+                    'https://cdn4.iconfinder.com/data/icons/glyphs/24/icons_user-512.png'),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    BlocProvider.of<AuthCubit>(context);
-  }
-
-  SafeArea _homePage(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 15.w),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              SizedBox(
-                height: 200.h,
-                width: 200.w,
-                child: FirebaseAuth.instance.currentUser!.photoURL != null
-                    ? CachedNetworkImage(
-                        imageUrl: FirebaseAuth.instance.currentUser!.photoURL!,
-                        placeholder: (context, url) =>
-                            Image.asset('assets/images/loading.gif'),
-                        fit: BoxFit.cover,
-                      )
-                    : Image.asset('assets/images/placeholder.png'),
-              ),
-              Text(
-                FirebaseAuth.instance.currentUser!.displayName!,
-                style: TextStyles.font15DarkBlue500Weight
-                    .copyWith(fontSize: 30.sp),
-              ),
-              BlocConsumer<AuthCubit, AuthState>(
-                buildWhen: (previous, current) => previous != current,
-                listenWhen: (previous, current) => previous != current,
-                listener: (context, state) async {
-                  if (state is AuthLoading) {
-                    print("loading");
-                  } else if (state is UserSignedOut) {
-                    context.pop();
-                    context.pushNamedAndRemoveUntil(
-                      Routes.loginScreen,
-                      predicate: (route) => false,
-                    );
-                  } else if (state is AuthError) {
-                    await AwesomeDialog(
-                      context: context,
-                      dialogType: DialogType.info,
-                      animType: AnimType.rightSlide,
-                      title: 'Sign out error',
-                      desc: state.message,
-                    ).show();
-                  }
-                },
-                builder: (context, state) {
-                  return AppTextButton(
-                    buttonText: 'Sign Out',
-                    textStyle: TextStyles.font15DarkBlue500Weight,
-                    onPressed: () {
-                      try {
-                        GoogleSignIn().disconnect();
-                      } finally {
-                        context.read<AuthCubit>().signOut();
-                      }
-                    },
-                  );
-                },
-              ),
-            ],
+      body: CustomScrollView(
+        // Use CustomScrollView for scrolling
+        slivers: <Widget>[
+          SliverToBoxAdapter(
+            // Welcome Text, etc.
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Important!
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    "Let's find your",
+                    style: TextStyle(fontSize: 30, color: Colors.black),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Text(
+                    "Burger!!",
+                    style: TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                      top: 30, bottom: 20, start: 16, end: 16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search for burgers...',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      prefixIcon: Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Text(
+                    "Our Top Picks",
+                    style: TextStyle(fontSize: 20, color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
           ),
+          SliverToBoxAdapter(
+            // FutureBuilder & ListView
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _getTopPicks(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No top picks available'));
+                }
+
+                var topPicks = snapshot.data!;
+
+                return SizedBox(
+                  // Set a fixed height!
+                  height: 250,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: topPicks.length,
+                    itemBuilder: (context, index) {
+                      var burger = topPicks[index];
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.network(
+                              burger['imageUrl'],
+                              height: 150,
+                              width: 150,
+                              fit: BoxFit.cover,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              burger['name'],
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Row(
+                              children: [
+                                const Icon(Icons.star,
+                                    color: Colors.yellow, size: 16),
+                                Text('${burger['rating']}'),
+                              ],
+                            ),
+                            Text('\$${burger['price']}'),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, Routes.productDetails);
+          },
+          backgroundColor: Colors.orange,
+          tooltip: 'Create Your Burger',
+          child: const Icon(Icons.add),
         ),
       ),
     );

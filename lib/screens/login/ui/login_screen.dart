@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pop(context);
             Navigator.pushNamedAndRemoveUntil(
               context,
-              Routes.homeScreen,
+              Routes.mainScreen, //change here
               (route) => false,
             );
           } else if (state is UserNotVerified) {
@@ -52,54 +52,78 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginPage(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
+        // Wrap with SingleChildScrollView
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.lock, size: 80, color: Colors.blue),
-            SizedBox(height: 16),
+            Image.asset('assets/images/logo/logo.png',
+                height: 200), // Replace with your logo path
+            const SizedBox(height: 16),
             Text(
-              "Sign In",
-              style: TextStyles.font24Blue700Weight.copyWith(fontSize: 24),
+              "Please enter your e-mail address\nand enter password",
+              textAlign: TextAlign.center,
+              style: TextStyles.font16Grey500Weight.copyWith(fontSize: 16),
             ),
-            SizedBox(height: 10),
-            Text(
-              "Login to continue using the app",
-              style: TextStyles.font14Grey400Weight.copyWith(fontSize: 14),
-            ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(),
+                labelText: "Enter your email",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: "Password",
-                border: OutlineInputBorder(),
+                labelText: "Enter your password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                ),
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {}, // Add forgot password functionality
+                child: const Text("Forgot password?"),
+              ),
+            ),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
                 context.read<AuthCubit>().signInWithEmail(
-                  _emailController.text,
-                  _passwordController.text,
-                );
+                      _emailController.text,
+                      _passwordController.text,
+                    );
               },
-              child: Text("Login"),
+              style: ElevatedButton.styleFrom(
+                  minimumSize:
+                      const Size(double.infinity, 50), // Full width button
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(110.0), // Rounded corners
+                  ),
+                  backgroundColor: Color.fromARGB(255, 13, 13, 14)),
+              child: const Text(
+                "Login",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Don't have an account? "),
+                const Text("Don't have an account?"),
                 GestureDetector(
                   onTap: () {
                     context.pushNamed(Routes.signupScreen);

@@ -34,7 +34,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             Navigator.pop(context);
             Navigator.pushNamedAndRemoveUntil(
               context,
-              Routes.homeScreen,
+              Routes.mainScreen,
               (route) => false,
             );
           } else if (state is UserSingupButNotVerified) {

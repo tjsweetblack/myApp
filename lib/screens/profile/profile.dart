@@ -1,5 +1,5 @@
 import 'package:auth_bloc/logic/cubit/auth_cubit.dart';
-import 'package:auth_bloc/screens/login/ui/login_screen.dart';
+import 'package:auth_bloc/routing/routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -57,17 +57,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user == null) {
       return Scaffold(
         appBar: AppBar(title: const Text("Profile")),
-        body: Center(child: Text("No user logged in", style: TextStyle(fontSize: 18))),
+        body: const Center(
+            child: Text("No user logged in", style: TextStyle(fontSize: 18))),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("User Profile", style: TextStyle(fontWeight: FontWeight.bold)), backgroundColor: const Color.fromARGB(0, 255, 255, 255)),
+      appBar: AppBar(
+        title: const Text("User Profile",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white, // Or a very light grey
+        elevation: 0, // Removes shadow
+        iconTheme: const IconThemeData(color: Colors.black), // Black back arrow
+      ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+        future:
+            FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -75,68 +83,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            return Center(child: Text('No user data found.'));
+            return const Center(child: Text('No user data found.'));
           }
 
           var userData = snapshot.data!.data() as Map<String, dynamic>;
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(
-                    userData['photoURL'] ??
-                        'https://cdn4.iconfinder.com/data/icons/glyphs/24/icons_user-512.png',
+            child: SingleChildScrollView(
+              // Added for scrollability
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start, // Align to the start
+                children: [
+                  Center(
+                    // Center the avatar
+                    child: CircleAvatar(
+                      radius: 60, // Slightly larger avatar
+                      backgroundImage: NetworkImage(
+                        userData['photoURL'] ??
+                            'https://cdn4.iconfinder.com/data/icons/glyphs/24/icons_user-512.png',
+                      ),
+                    ),
                   ),
-                ),
-                SizedBox(height: 16),
-                Text("Name: ${userData['name'] ?? ''}", style: TextStyle(fontSize: 18)),
-                Text("Email: ${userData['email'] ?? ''}", style: TextStyle(fontSize: 18)),
-                Text("Phone: ${userData['phoneNumber'] ?? ''}", style: TextStyle(fontSize: 18)),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: InputDecoration(
-                    labelText: "Change Number",
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 24),
+                  _buildProfileRow("Name", userData['name'] ?? ''),
+                  _buildProfileRow("Email", userData['email'] ?? ''),
+                  _buildProfileRow("Phone", userData['phoneNumber'] ?? ''),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Do you wish to change your phone number?",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  keyboardType: TextInputType.phone,
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isUpdating ? null : () => _updatePhoneNumber(user.uid),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: "Change Number",
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
                   ),
-                  child: _isUpdating
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Update Phone Number'),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    await authCubit.signOut(); // Sign out the user
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
-                    textStyle: TextStyle(fontSize: 16),
+                  const SizedBox(height: 16),
+                  Center(
+                    // Center the buttons
+                    child: ElevatedButton(
+                      onPressed: _isUpdating
+                          ? null
+                          : () => _updatePhoneNumber(user.uid),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12), // Adjusted padding
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                      child: _isUpdating
+                          ? const CircularProgressIndicator(color: Color.fromARGB(255, 0, 0, 0))
+                          : const Text(
+                              'Update Phone Number',
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 255, 253, 253)),
+                            ),
+                    ),
                   ),
-                  child: Text('Logout'),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Center(
+                    // Center the buttons
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await authCubit.signOut();
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          Routes.loginScreen,
+                          (Route<dynamic> route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 50, vertical: 12),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(
+                            color: Color.fromARGB(255, 255, 255, 255)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildProfileRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(fontSize: 16)),
+        ],
       ),
     );
   }

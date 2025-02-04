@@ -44,6 +44,7 @@ dependencies:
   google_sign_in: ^6.2.1
   rive: ^0.13.4
   device_preview: ^1.2.0
+  carousel_slider: ^5.0.0
 
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -64,6 +65,7 @@ flutter:
     - assets/animation/
     - assets/images/
     - assets/svgs/
+    - assets/images/logo/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
   # For details regarding adding assets from package dependencies, see

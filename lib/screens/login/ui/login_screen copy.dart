@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pop(context); // Close loading dialog
             Navigator.pushNamedAndRemoveUntil(
               context,
-              Routes.homeScreen,
+              Routes.mainScreen,
               (route) => false,
             );
           } else if (state is UserNotVerified) {

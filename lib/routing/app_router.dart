@@ -1,3 +1,9 @@
+import 'package:auth_bloc/screens/create_burger/create_burger.dart';
+import 'package:auth_bloc/screens/main_screen.dart';
+import 'package:auth_bloc/screens/orders/order_details/order_details.dart';
+import 'package:auth_bloc/screens/orders/orders.dart';
+import 'package:auth_bloc/screens/product/product_details.dart';
+import 'package:auth_bloc/screens/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,14 +29,6 @@ class AppRouter {
           builder: (_) => BlocProvider.value(
             value: authCubit,
             child: const ForgetScreen(),
-          ),
-        );
-
-      case Routes.homeScreen:
-        return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: authCubit,
-            child: HomeScreen(),
           ),
         );
 
@@ -61,6 +59,46 @@ class AppRouter {
           builder: (_) => BlocProvider.value(
             value: authCubit,
             child: const LoginScreen(),
+          ),
+        );
+
+      case Routes.profileScreen:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: const ProfileScreen(),
+          ),
+        );
+
+      case Routes.mainScreen:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: const MainScreen(),
+          ),
+        );
+
+      case Routes.orderDetails:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: const OrderDetailsPage(),
+          ),
+        );
+
+      case Routes.createBurger:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: BurgerBuilderScreen(),
+          ),
+        );
+
+      case Routes.productDetails:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: ProductDetailsPage(burger: {},),
           ),
         );
     }

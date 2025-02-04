@@ -29,14 +29,14 @@ Future<void> main() async {
       if (user == null || !user.emailVerified) {
         initialRoute = Routes.loginScreen;
       } else {
-        initialRoute = Routes.homeScreen;
+        initialRoute = Routes.mainScreen;
       }
     },
   );
 
   runApp(
     DevicePreview(
-      enabled: true, // Set to false for production
+      enabled: false, // Set to false for production
       builder: (context) => MyApp(router: AppRouter())),
   );
 }
