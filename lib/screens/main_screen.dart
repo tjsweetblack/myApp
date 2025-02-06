@@ -13,6 +13,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // Index of the currently selected screen
+  String _appBarTitle = 'Home'; // Title of the app bar
 
   // Define your screens
   static const List<Widget> _widgetOptions = <Widget>[
@@ -25,12 +26,31 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+
+      switch (index) {
+        case 0:
+          _appBarTitle = 'Home';
+          break;
+        case 1:
+          _appBarTitle = 'Orders';
+          break;
+        case 2:
+          _appBarTitle = 'Cart';
+          break;
+        case 3:
+          _appBarTitle = 'Favorites';
+          break;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_appBarTitle),
+        centerTitle: true,
+      ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex), // Show selected screen
       ),

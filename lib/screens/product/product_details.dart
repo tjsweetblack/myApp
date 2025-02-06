@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class ProductDetailsPage extends StatefulWidget {
   final Map<String, dynamic> burger; // Receive the burger data
 
-  const ProductDetailsPage({Key? key, required this.burger})
-      : super(key: key);
+  const ProductDetailsPage({super.key, required this.burger});
 
   @override
   State<ProductDetailsPage> createState() => _ProductDetailsPageState();

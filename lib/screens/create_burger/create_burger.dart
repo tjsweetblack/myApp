@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class BurgerApp extends StatelessWidget {
+  const BurgerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -14,6 +16,8 @@ class BurgerApp extends StatelessWidget {
 }
 
 class BurgerBuilderScreen extends StatefulWidget {
+  const BurgerBuilderScreen({super.key});
+
   @override
   _BurgerBuilderScreenState createState() => _BurgerBuilderScreenState();
 }
