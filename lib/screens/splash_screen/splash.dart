@@ -5,11 +5,21 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Image.asset( // Or your logo widget
-          'assets/images/logo/logo.png', // Path to your logo
-          height: 200, // Adjust height as needed
+    return Directionality(
+      // Add Directionality widget
+      textDirection: TextDirection.ltr, // Set text direction (usually ltr)
+      child: Scaffold(
+        // Or whatever your SplashScreen's root widget is
+        body: Center(
+          // Example content
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/images/logo/logo.png'), // Your logo
+              const SizedBox(height: 16),
+              const CircularProgressIndicator(), // Or your loading indicator
+            ],
+          ),
         ),
       ),
     );

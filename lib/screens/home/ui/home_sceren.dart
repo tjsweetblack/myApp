@@ -1,8 +1,13 @@
 import 'package:auth_bloc/routing/routes.dart';
+
 import 'package:auth_bloc/screens/product/product_details.dart';
+
 import 'package:auth_bloc/screens/profile/profile.dart';
+
 import 'package:carousel_slider/carousel_slider.dart'; // Updated import
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -12,6 +17,7 @@ class HomeScreen extends StatelessWidget {
     var snapshot = await FirebaseFirestore.instance
         .collection('burgers')
         .where('topPick', isEqualTo: true) // Filter for topPick = true
+
         .get();
 
     return snapshot.docs.map((doc) {
@@ -27,12 +33,17 @@ class HomeScreen extends StatelessWidget {
 
   Future<List<Map<String, dynamic>>> _getBurgers() async {
     var snapshot = await FirebaseFirestore.instance.collection('burgers').get();
+
     return snapshot.docs.map((doc) {
       return {
         'name': doc['name'],
+
         'imageUrl': doc['imageUrl'],
+
         'rating': doc['rating'],
+
         'price': doc['price'],
+
         'productID': doc.id, // Add productID to the map'
       };
     }).toList();
@@ -76,14 +87,18 @@ class HomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16.0),
                     child: Card(
                       color: Color.fromARGB(255, 0, 0, 0),
+
                       margin: EdgeInsets.zero,
+
                       elevation: 4, // Add elevation for a card look
+
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           children: [
                             Image.asset(
                               'assets/images/logo/logo.png', // Your logo path
+
                               height: 80, // Adjust height as needed
                             ),
                             const SizedBox(height: 16),
@@ -103,9 +118,12 @@ class HomeScreen extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange, // Example
+
                                 foregroundColor: Colors.white, // Example
+
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 32, vertical: 16),
+
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
@@ -152,10 +170,13 @@ class HomeScreen extends StatelessWidget {
                       itemCount: topPicks.length,
                       itemBuilder: (context, index) {
                         var burger = topPicks[index];
+
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
+
                           child: GestureDetector(
-                            // Wrap with GestureDetector
+// Wrap with GestureDetector
+
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -165,46 +186,18 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               );
                             },
+
                             child: Column(
-                              // Keep the Column *inside* GestureDetector
+// Keep the Column *inside* GestureDetector
+
                               crossAxisAlignment: CrossAxisAlignment.start,
+
                               children: [
                                 Image.network(
                                   burger['imageUrl'],
+                                  height: 150,
+                                  width: 150,
                                   fit: BoxFit.cover,
-                                  frameBuilder: (BuildContext context,
-                                      Widget child,
-                                      int? frame,
-                                      bool wasSynchronouslyLoaded) {
-                                    if (wasSynchronouslyLoaded) {
-                                      return child;
-                                    }
-                                    return AnimatedOpacity(
-                                      opacity: frame == null ? 0 : 1,
-                                      duration: const Duration(seconds: 1),
-                                      curve: Curves.easeOut,
-                                      child: child,
-                                    );
-                                  },
-                                  loadingBuilder: (BuildContext context,
-                                      Widget child,
-                                      ImageChunkEvent? loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress
-                                                    .expectedTotalBytes !=
-                                                null
-                                            ? loadingProgress
-                                                    .cumulativeBytesLoaded /
-                                                loadingProgress
-                                                    .expectedTotalBytes!
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (context, object, stackTrace) =>
-                                      const Icon(Icons.error),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -224,7 +217,8 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          // ... (GestureDetector and Column for topPicks remain the same)
+
+// ... (GestureDetector and Column for topPicks remain the same)
                         );
                       },
                     ),
@@ -242,7 +236,10 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             FutureBuilder<List<Map<String, dynamic>>>(
+// Wrap SliverList in FutureBuilder
+
               future: _getBurgers(),
+
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SliverToBoxAdapter(
@@ -261,114 +258,64 @@ class HomeScreen extends StatelessWidget {
 
                 var burgers = snapshot.data!;
 
-                return SliverGrid(
-                  // Use SliverGrid
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // 2 columns
-                    childAspectRatio: 0.8, // Adjust aspect ratio as needed
-                  ),
+                return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (BuildContext context, int index) {
                       if (index >= burgers.length) {
-                        return const SizedBox.shrink();
+// Check index before accessing
+
+                        return const SizedBox
+                            .shrink(); // Return an empty widget
                       }
 
                       var burger = burgers[index];
+
                       return GestureDetector(
+// GestureDetector *outside* Card
+
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProductDetailsPage(
-                                  burgerId: burger['productID']),
+                                burgerId: burger['productID'],
+                              ),
                             ),
                           );
                         },
+
                         child: Card(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                // Make image take up available space
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8.0),
-                                    topRight: Radius.circular(8.0),
-                                  ),
-                                  child: FittedBox(
-                                    fit: BoxFit.cover,
-                                    child: Image.network(
-                                      'https://img.freepik.com/free-photo/beef-burger-with-lettuce-melted-cheddar-tomato-mayo-ketchup_140725-188.jpg?t=st=1739440308~exp=1739443908~hmac=5f0d365e857f203193239239423f079bc7d176d76b4875fd1311231d6549f4cf&w=1380',
-                                      fit: BoxFit.cover,
-                                      frameBuilder: (BuildContext context,
-                                          Widget child,
-                                          int? frame,
-                                          bool wasSynchronouslyLoaded) {
-                                        if (wasSynchronouslyLoaded) {
-                                          return child;
-                                        }
-                                        return AnimatedOpacity(
-                                          opacity: frame == null ? 0 : 1,
-                                          duration: const Duration(seconds: 1),
-                                          curve: Curves.easeOut,
-                                          child: child,
-                                        );
-                                      },
-                                      loadingBuilder: (BuildContext context,
-                                          Widget child,
-                                          ImageChunkEvent? loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            value: loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                        .cumulativeBytesLoaded /
-                                                    loadingProgress
-                                                        .expectedTotalBytes!
-                                                : null,
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder:
-                                          (context, object, stackTrace) =>
-                                              const Icon(Icons.error),
-                                    ),
-                                  ),
-                                ),
+// Card *inside* GestureDetector
+
+                          child: ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: FittedBox(
+                                fit: BoxFit.cover,
+                                child: Image.network(burger['imageUrl']),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      burger['name'],
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text('\$${burger['price']}'),
-                                  ],
-                                ),
-                              ),
-                            ],
+                            ),
+                            title: Text(burger['name']),
+                            subtitle: Text('\$${burger['price']}'),
                           ),
                         ),
                       );
                     },
-                    childCount: burgers.length,
+
+                    childCount:
+                        burgers.length, // Use the actual length of the list
                   ),
                 );
               },
             ),
             SliverToBoxAdapter(
-              // Spacer Box
+// Spacer Box
+
               child: SizedBox(
                 height: 70, // Height of the box
+
                 width: double.infinity, // Occupy full width
+
                 child: Container(
                   color:
                       Theme.of(context).canvasColor, // Match background color
