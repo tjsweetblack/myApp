@@ -6,7 +6,9 @@ import 'package:auth_bloc/screens/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';// Import rxdart
+import 'dart:async';
+import 'package:intl/intl.dart';
+import 'package:rxdart/rxdart.dart'; // Import rxdart
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -81,6 +83,38 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Stream<DocumentSnapshot<Map<String, dynamic>>?>
+      _getOldestActiveOrderStream() {
+    User? user = FirebaseAuth.instance.currentUser;
+    print("_getOldestActiveOrderStream() called");
+
+    if (user != null) {
+      print("User is logged in: ${user.uid}");
+      return FirebaseFirestore.instance
+          .collection('orders') // Make sure collection is 'orders'
+          .where('userId', isEqualTo: user.uid)
+          .where('status', whereIn: ['pending'])
+          .orderBy('dateCreated', descending: false)
+          .limit(1)
+          .snapshots()
+          .debounceTime(const Duration(milliseconds: 500)) // RE-ADD DEBOUNCE!
+          .map((snapshot) {
+            print(
+                "Snapshot received (after debounce): ${snapshot.docs.length} documents");
+            if (snapshot.docs.isNotEmpty) {
+              print("Oldest order document found: ${snapshot.docs.first.id}");
+              return snapshot.docs.first;
+            } else {
+              print("No active orders found");
+              return null;
+            }
+          });
+    } else {
+      print("No user logged in");
+      return Stream.value(null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +148,30 @@ class _MainScreenState extends State<MainScreen> {
             child: Center(
               child: _widgetOptions.elementAt(_selectedIndex),
             ),
+          ),
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>?>(
+            // CORRECTED: Use _getOldestActiveOrderStream() directly
+            stream: _getOldestActiveOrderStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.active) {
+                // Check if stream is active
+                if (snapshot.hasData &&
+                    snapshot.data != null &&
+                    snapshot.data!.exists) {
+                  Map<String, dynamic> orderData = snapshot.data!.data()!;
+                  return _buildOrderCard(orderData);
+                } else {
+                  return const SizedBox
+                      .shrink(); // Don't show card if no active order
+                }
+              } else if (snapshot.connectionState == ConnectionState.waiting) {
+                // Optionally show a loading indicator while waiting for initial data
+                return const CircularProgressIndicator();
+              } else {
+                return const SizedBox
+                    .shrink(); // Show nothing in other states (e.g., none, done, error)
+              }
+            },
           ),
         ],
       ),
@@ -180,6 +238,92 @@ class _MainScreenState extends State<MainScreen> {
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  int _rebuildCount = 0; // Add rebuild counter
+
+  Widget _buildOrderCard(Map<String, dynamic> orderData) {
+    _rebuildCount++; // Increment rebuild counter
+    print("Building _buildOrderCard, rebuildCount: $_rebuildCount");
+    String orderNumber =
+        (orderData['orderNumber'] ?? 'N/A').toString(); // Convert to String
+    double totalAmount =
+        (orderData['totalPrice'] ?? 0.0).toDouble(); // Changed to totalPrice
+    String kitchenStatus =
+        orderData['kitchenStatus'] ?? 'pending'; // Default to pending if null
+    Timestamp dateCreated =
+        orderData['dateCreated'] as Timestamp? ?? Timestamp.now();
+    DateTime dateTime = dateCreated.toDate();
+    String formattedDate =
+        DateFormat('MMM d, HH:mm').format(dateTime); // Formatted date
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize:
+              MainAxisSize.min, // Ensure card takes minimal vertical space
+          children: [
+            Text('Order Number: $orderNumber',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('Order Date: $formattedDate'),
+            const SizedBox(height: 8),
+            Text('Total Amount: \$${totalAmount.toStringAsFixed(2)}'),
+            const SizedBox(height: 16),
+            _buildProgressBar(kitchenStatus),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(String kitchenStatus) {
+    Color pendingColor = Colors.grey;
+    Color cookingColor = Colors.grey;
+    Color deliveryColor = Colors.grey;
+
+    if (kitchenStatus == 'queue' || kitchenStatus == 'pending') {
+      // Assuming 'queue' is the initial pending state
+      pendingColor = Colors.orange;
+    } else if (kitchenStatus == 'cooking') {
+      pendingColor = Colors.orange;
+      cookingColor = Colors.orange;
+    } else if (kitchenStatus == 'packing') {
+      pendingColor = Colors.orange;
+      cookingColor = Colors.orange;
+      deliveryColor = Colors.orange;
+    }
+
+    return Row(
+      children: [
+        _buildProgressSection('Pending', pendingColor),
+        const SizedBox(width: 8),
+        _buildProgressSection('Cooking', cookingColor),
+        const SizedBox(width: 8),
+        _buildProgressSection('Delivery', deliveryColor),
+      ],
+    );
+  }
+
+  Widget _buildProgressSection(String title, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(fontSize: 12)),
+        ],
       ),
     );
   }

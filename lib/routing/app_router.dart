@@ -1,3 +1,4 @@
+import 'package:auth_bloc/main.dart';
 import 'package:auth_bloc/screens/create_burger/create_burger.dart';
 import 'package:auth_bloc/screens/main_screen.dart';
 import 'package:auth_bloc/screens/orders/order_details/order_details.dart';
@@ -21,6 +22,10 @@ class AppRouter {
   }
 
   Route? generateRoute(RouteSettings settings) {
+    if (settings.name == null) {
+      return _handleInitialRoute();
+    }
+
     switch (settings.name) {
       case Routes.forgetScreen:
         return MaterialPageRoute(
@@ -43,6 +48,7 @@ class AppRouter {
             ),
           );
         }
+        return null; // Handle incorrect arguments
 
       case Routes.signupScreen:
         return MaterialPageRoute(
@@ -96,10 +102,35 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
             value: authCubit,
-            child: ProductDetailsPage(burger: {},),
+            child: ProductDetailsPage(
+              burgerId: '',
+            ),
           ),
         );
+
+      default:
+        return null;
     }
-    return null;
+  }
+
+  Route? _handleInitialRoute() {
+    switch (initialRoute) {
+      case Routes.loginScreen:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: const LoginScreen(),
+          ),
+        );
+      case Routes.mainScreen:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: const MainScreen(),
+          ),
+        );
+      default:
+        return null;
+    }
   }
 }

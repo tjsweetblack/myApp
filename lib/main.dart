@@ -1,8 +1,9 @@
 import 'package:auth_bloc/firebase_options.dart';
 import 'package:auth_bloc/logic/cubit/auth_cubit.dart';
+import 'package:auth_bloc/screens/product/product_details.dart';
+import 'package:auth_bloc/screens/splash_screen/splash.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,88 +12,89 @@ import 'package:device_preview/device_preview.dart';
 import 'routing/app_router.dart';
 import 'routing/routes.dart';
 import 'theming/colors.dart';
+import 'package:provider/provider.dart';
 
 late String initialRoute;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Future.wait([
-    Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ),
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
     ScreenUtil.ensureScreenSize(),
     preloadSVGs(['assets/svgs/google_logo.svg'])
   ]);
 
-  FirebaseAuth.instance.authStateChanges().listen(
-    (user) {
-      if (user == null || !user.emailVerified) {
-        initialRoute = Routes.loginScreen;
-      } else {
-        initialRoute = Routes.mainScreen;
-      }
-    },
-  );
-
   runApp(
     DevicePreview(
-      enabled: false, // Set to false for production
-      builder: (context) => MyApp(router: AppRouter())),
+      enabled: true,
+      builder: (context) => ChangeNotifierProvider(
+        create: (context) => FavoritesProvider(),
+        child: MyApp(router: AppRouter()),
+      ),
+    ),
   );
 }
 
 Future<void> preloadSVGs(List<String> paths) async {
   for (final path in paths) {
     final loader = SvgAssetLoader(path);
-    await svg.cache.putIfAbsent(
-      loader.cacheKey(null),
-      () => loader.loadBytes(null),
-    );
+    await svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final AppRouter router;
 
   const MyApp({super.key, required this.router});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthCubit>(
-          create: (context) => AuthCubit(),
-        ),
+        BlocProvider<AuthCubit>(create: (context) => AuthCubit()),
       ],
       child: ScreenUtilInit(
         designSize: const Size(360, 690),
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (_, child) {
-          return MaterialApp(
-            locale: DevicePreview.locale(context),
-            builder: DevicePreview.appBuilder,
-            title: 'Login & Signup App',
-            theme: ThemeData(
-              useMaterial3: true,
-              textSelectionTheme: const TextSelectionThemeData(
-                cursorColor: ColorsManager.mainBlue,
-                selectionColor: Color.fromARGB(188, 36, 124, 255),
-                selectionHandleColor: ColorsManager.mainBlue,
-              ),
-            ),
-            onGenerateRoute: router.generateRoute,
-            debugShowCheckedModeBanner: false,
-            initialRoute: initialRoute,
+          return StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SplashScreen();
+              }
+
+              final user = snapshot.data;
+              final initialRoute = user == null || !user.emailVerified
+                  ? Routes.loginScreen
+                  : Routes.mainScreen;
+
+              return MaterialApp(
+                locale: DevicePreview.locale(context),
+                builder: DevicePreview.appBuilder,
+                title: 'Login & Signup App',
+                theme: ThemeData(
+                  useMaterial3: true,
+                  textSelectionTheme: const TextSelectionThemeData(
+                    cursorColor: ColorsManager.mainBlue,
+                    selectionColor: Color.fromARGB(188, 36, 124, 255),
+                    selectionHandleColor: ColorsManager.mainBlue,
+                  ),
+                ),
+                onGenerateRoute: widget.router.generateRoute,
+                debugShowCheckedModeBanner: false,
+                initialRoute: initialRoute,
+              );
+            },
           );
         },
       ),
     );
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<AppRouter>('router', router));
   }
 }

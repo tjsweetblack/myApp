@@ -141,7 +141,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         textStyle: const TextStyle(fontSize: 16),
                       ),
                       child: _isUpdating
-                          ? const CircularProgressIndicator(color: Color.fromARGB(255, 0, 0, 0))
+                          ? const CircularProgressIndicator(
+                              color: Color.fromARGB(255, 0, 0, 0))
                           : const Text(
                               'Update Phone Number',
                               style: TextStyle(
@@ -155,10 +156,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         await authCubit.signOut();
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          Routes.loginScreen,
-                          (Route<dynamic> route) => false,
-                        );
+                        if (context.mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            Routes.loginScreen,
+                            (route) => false,
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,

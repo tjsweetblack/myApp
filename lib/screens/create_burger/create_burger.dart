@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class BurgerApp extends StatelessWidget {
@@ -8,7 +9,7 @@ class BurgerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Burger Builder',
       theme: ThemeData(
-        primarySwatch: Colors.red, // Customize your theme
+        primarySwatch: Colors.red,
       ),
       home: BurgerBuilderScreen(),
     );
@@ -23,65 +24,128 @@ class BurgerBuilderScreen extends StatefulWidget {
 }
 
 class _BurgerBuilderScreenState extends State<BurgerBuilderScreen> {
-  // Sample Data (Replace with your actual data fetching)
-  final Map<String, List<BurgerItem>> burgerOptions = {
-    'Bun': [
-      BurgerItem('Brioche', 0.0, 'images/brioche.png'), // Add image paths
-      BurgerItem('Seeded', 0.0, 'images/seeded.png'),
-      BurgerItem('Lettuce', 0.0, 'images/lettuce.png'),
-    ],
-    'Patty': [
-      BurgerItem('Beef', 11.95, 'images/beef.png'),
-      BurgerItem('Chicken', 10.95, 'images/chicken.png'),
-      BurgerItem('Beyond', 10.95, 'images/beyond.png'),
-    ],
-    'Toppings': [
-      BurgerItem('Ketchup', 0.0, 'images/ketchup.png'),
-      BurgerItem('Mayo', 0.0, 'images/mayo.png'),
-      BurgerItem('BBQ', 0.0, 'images/bbq.png'),
-    ],
-  };
-
-  Map<String, BurgerItem?> selectedOptions = {}; // Track selected items
+  Map<String, List<BurgerItem>> burgerOptions = {};
+  Map<String, Map<BurgerItem, int>> selectedOptions = {};
   double totalPrice = 0.0;
+  bool _isLoading = true;
+  String newBurgerName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIngredients();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showBurgerNameDialog();
+    });
+  }
+
+  Future<void> _loadIngredients() async {
+    try {
+      QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('ingredients').get();
+
+      Map<String, List<BurgerItem>> options = {};
+
+      for (var doc in snapshot.docs) {
+        String category = doc['category'];
+        String name = doc['name'];
+        double price = (doc['price'] as num).toDouble();
+        String imagePath = doc['imageUrl'];
+
+        if (!options.containsKey(category)) {
+          options[category] = [];
+        }
+        options[category]!.add(BurgerItem(name, price, imagePath));
+      }
+
+      setState(() {
+        burgerOptions = options;
+        _isLoading = false;
+      });
+    } catch (error) {
+      print("Error loading ingredients: $error");
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading ingredients: $error')),
+      );
+    }
+  }
+
+  void _showBurgerNameDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Name Your Burger'),
+          content: TextField(
+            decoration: const InputDecoration(
+              hintText: 'Enter burger name',
+            ),
+            onChanged: (value) {
+              newBurgerName = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {}); // Trigger rebuild to show the name
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Burger Builder'),
+        title: const Text('Burger Builder'),
         actions: [
           IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () {
-              // Handle close action
-            },
+            icon: const Icon(Icons.close),
+            onPressed: () {},
           ),
         ],
       ),
       body: Column(
         children: [
-          Expanded(
-            child: ListView(
-              children: burgerOptions.entries.map((entry) {
-                String category = entry.key;
-                List<BurgerItem> items = entry.value;
-
-                return buildCategorySection(category, items);
-              }).toList(),
+          if (newBurgerName.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Your Burger Name: $newBurgerName',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Expanded(
+                  child: ListView(
+                    children: burgerOptions.entries.map((entry) {
+                      String category = entry.key;
+                      List<BurgerItem> items = entry.value;
+                      return buildCategorySection(category, items);
+                    }).toList(),
+                  ),
+                ),
           Container(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('£${totalPrice.toStringAsFixed(2)}'),
                 ElevatedButton(
-                  onPressed: () {
-                    // Handle add to basket
-                  },
-                  child: Text('Add to Basket'),
+                  onPressed: () {},
+                  child: const Text('Add to Basket'),
                 ),
               ],
             ),
@@ -93,18 +157,18 @@ class _BurgerBuilderScreenState extends State<BurgerBuilderScreen> {
 
   Widget buildCategorySection(String category, List<BurgerItem> items) {
     return Card(
-      margin: EdgeInsets.all(8.0),
+      margin: const EdgeInsets.all(8.0),
       child: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               category,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
-            Wrap( // Use Wrap for responsive layout
+            const SizedBox(height: 16),
+            Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
               children: items.map((item) => buildBurgerItemCard(item, category)).toList(),
@@ -116,34 +180,77 @@ class _BurgerBuilderScreenState extends State<BurgerBuilderScreen> {
   }
 
   Widget buildBurgerItemCard(BurgerItem item, String category) {
-    bool isSelected = selectedOptions[category] == item;
+    int quantity = selectedOptions[category]?[item] ?? 0;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (isSelected) {
-            selectedOptions.remove(category);
-            totalPrice -= item.price;
-          } else {
-            selectedOptions[category] = item;
-            totalPrice = selectedOptions.values.fold(0, (sum, item) => sum + (item?.price ?? 0));
-          }
-        });
-      },
+    return IntrinsicWidth(
       child: Card(
-        color: isSelected ? Colors.red[100] : null, // Highlight selected card
+        color: quantity > 0 ? Colors.red[100] : null,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Image.asset(item.imagePath, height: 80), // Display image
-              Text(item.name),
+              Image.network(
+                item.imagePath,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+              Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
               Text('£${item.price.toStringAsFixed(2)}'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: quantity > 0
+                        ? () {
+                            setState(() {
+                              quantity--;
+                              if (quantity == 0) {
+                                selectedOptions[category]?.remove(item);
+                                if (selectedOptions[category]?.isEmpty == true) {
+                                  selectedOptions.remove(category);
+                                }
+                              } else {
+                                selectedOptions.putIfAbsent(category, () => {})[item] = quantity;
+                              }
+                              _calculateTotalPrice();
+                            });
+                          }
+                        : null,
+                  ),
+                  Text('$quantity'),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () {
+                      setState(() {
+                        quantity++;
+                        if (category == 'Bread') {
+                          selectedOptions[category]?.clear();
+                        }
+                        selectedOptions.putIfAbsent(category, () => {})[item] = quantity;
+                        _calculateTotalPrice();
+                      });
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _calculateTotalPrice() {
+    totalPrice = 0;
+    selectedOptions.forEach((category, items) {
+      items.forEach((item, quantity) {
+        totalPrice += item.price * quantity;
+      });
+    });
   }
 }
 
