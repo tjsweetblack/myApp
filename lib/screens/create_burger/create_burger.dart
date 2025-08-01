@@ -30,7 +30,7 @@ class BurgerApp extends StatelessWidget {
           ),
           iconTheme: IconThemeData(color: Colors.white),
         ),
-        bottomAppBarTheme: const BottomAppBarTheme(
+        bottomAppBarTheme: const BottomAppBarThemeData(
           color: Colors.black, // Explicitly set bottom bar color to black
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
