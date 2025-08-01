@@ -8,4 +8,6 @@ class Routes {
   static const String orderDetails = 'orderDetails';
   static const String productDetails = 'productDetails';
   static const String createBurger = 'createBurger';
+  static const String myCustomBurgersScreen = 'myCustomBurgersScreen';
+  static const String onboardingScreen = 'onboardingScreen';
 }

@@ -9,15 +9,18 @@ class SplashScreen extends StatelessWidget {
       // Add Directionality widget
       textDirection: TextDirection.ltr, // Set text direction (usually ltr)
       child: Scaffold(
+        backgroundColor: Colors.black, // Set the background color to black here
         // Or whatever your SplashScreen's root widget is
         body: Center(
           // Example content
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/images/logo/logo.png'), // Your logo
+              Image.asset('assets/images/logo/logo.png', height: 200,), // Your logo
               const SizedBox(height: 16),
-              const CircularProgressIndicator(), // Or your loading indicator
+              const CircularProgressIndicator(
+                color: Colors.white, // Set the p, hrogress circle color to white here
+              ), // Or your loading indicator
             ],
           ),
         ),

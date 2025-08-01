@@ -1,3 +1,4 @@
+import 'package:auth_bloc/routing/routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,9 +19,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   User? _user;
   Map<String, dynamic>? _burgerData;
   Map<String, int> _extraQuantities = {};
-  List<Map<String, dynamic>> _extras = [];
-  double _burgerPrice = 0; // Store the base burger price
+  List<DocumentSnapshot> _extras = [];
+  double _burgerPrice = 0;
   double _totalPrice = 0;
+  bool _isAddingToCart = false; // Loading state for Add to Cart
 
   @override
   void initState() {
@@ -32,7 +34,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
   Future<void> _getUser() async {
     _user = _auth.currentUser;
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadBurgerDetails() async {
@@ -42,17 +44,20 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     DocumentSnapshot snapshot = await burgerDoc.get();
 
     if (snapshot.exists) {
-      setState(() {
-        _burgerData = snapshot.data() as Map<String, dynamic>;
-        _burgerPrice =
-            double.parse(_burgerData!['price'].toString()); // Parse price
-        _totalPrice = _burgerPrice;
-      });
+      if (mounted)
+        setState(() {
+          _burgerData = snapshot.data() as Map<String, dynamic>?;
+          _burgerPrice =
+              double.tryParse(_burgerData?['price']?.toString() ?? '0') ?? 0;
+          _updateTotalPrice();
+        });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Burger not found.')),
-      );
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Burger not found.')),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -64,17 +69,32 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         await ingredientsCollection.where('extra', isEqualTo: true).get();
 
     if (snapshot.docs.isNotEmpty) {
-      setState(() {
-        _extras = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
-        for (var extra in _extras) {
-          _extraQuantities[extra['name']] = 0;
-        }
-      });
+      if (mounted)
+        setState(() {
+          _extras = snapshot.docs;
+          for (var doc in _extras) {
+            _extraQuantities[doc.id] = 0;
+          }
+          _updateTotalPrice();
+        });
     } else {
       print("No extras found in ingredients collection.");
     }
+  }
+
+  void _updateTotalPrice() {
+    _totalPrice = _burgerPrice * quantity;
+    _extraQuantities.forEach((extraId, extraQuantity) {
+      if (extraQuantity > 0) {
+        DocumentSnapshot? extraDoc =
+            _extras.firstWhere((doc) => doc.id == extraId);
+        if (extraDoc != null) {
+          double extraPrice =
+              double.tryParse(extraDoc['price']?.toString() ?? '0') ?? 0;
+          _totalPrice += extraPrice * extraQuantity * quantity;
+        }
+      }
+    });
   }
 
   Future<void> _addToCart(BuildContext context) async {
@@ -85,10 +105,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       return;
     }
 
+    setState(() {
+      _isAddingToCart = true; // Start loading
+    });
+
     try {
       DocumentReference userDoc =
           FirebaseFirestore.instance.collection('users').doc(_user!.uid);
-
       DocumentSnapshot userSnapshot = await userDoc.get();
 
       if (!userSnapshot.exists ||
@@ -100,10 +123,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       }
 
       String cartId = userSnapshot.get('cart');
-
       DocumentReference cartDoc =
           FirebaseFirestore.instance.collection('cart').doc(cartId);
-
       DocumentSnapshot cartSnapshot = await cartDoc.get();
 
       if (!cartSnapshot.exists) {
@@ -113,10 +134,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         return;
       }
 
+      List<String> extrasArray = [];
+      _extraQuantities.forEach((key, value) {
+        for (int i = 0; i < value; i++) {
+          extrasArray.add(key);
+        }
+      });
+
       Map<String, dynamic> newItem = {
         'productId': widget.burgerId,
         'quantity': quantity,
-        'extras': _extraQuantities.map((key, value) => MapEntry(key, value)),
+        'extras': extrasArray,
         'totalPrice': _totalPrice,
       };
 
@@ -125,10 +153,63 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         'cartTotalPrice': FieldValue.increment(_totalPrice),
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item added to cart!')),
+      setState(() {
+        _isAddingToCart = false; // End loading
+      });
+
+      // Show Dialog on successful cart addition with black background, white text, orange buttons
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return Theme(
+            // Apply theme for AlertDialog
+            data: Theme.of(context).copyWith(
+              dialogTheme: DialogTheme(
+                backgroundColor: Colors.black, // Black background for dialog
+              ),
+            ),
+            child: AlertDialog(
+              title: Text('Successfully added to cart!',
+                  style: TextStyle(color: Colors.white)), // White title text
+              actions: <Widget>[
+                TextButton(
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.orange), // Orange text for button
+                  child: const Text('Continue Exploring',
+                      style:
+                          TextStyle(color: Colors.white)), // White button text
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      Routes.mainScreen,
+                      arguments: 0,
+                    );
+                  },
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                      foregroundColor: Colors.orange), // Orange text for button
+                  child: const Text('See My Cart',
+                      style:
+                          TextStyle(color: Colors.white)), // White button text
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      Routes.mainScreen,
+                      arguments: 2,
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
       );
     } catch (e) {
+      setState(() {
+        _isAddingToCart = false; // End loading even in error case
+      });
       print('Error adding to cart: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error adding to cart: $e')),
@@ -152,12 +233,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       Map<String, dynamic> burgerData =
           burgerSnapshot.data() as Map<String, dynamic>;
 
-      // Remove any fields you don't want to duplicate (optional):
-      burgerData.remove(
-          'rating'); // Example: Remove rating if you don't want to copy it
-      burgerData.remove('reviews'); // Example: Remove reviews
-
-      // Create a NEW document in the 'burgers' collection:
       CollectionReference burgersCollection =
           FirebaseFirestore.instance.collection('burgers');
 
@@ -169,14 +244,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Burger duplicated!')),
       );
-
-      // Optionally navigate to the new burger's details page:
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => ProductDetailsPage(burgerId: newBurgerDoc.id), // Pass new ID
-      //   ),
-      // );
     } catch (e) {
       print('Error duplicating burger: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +268,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             Navigator.pop(context);
           },
         ),
-        title: Text(_burgerData!['name'] ?? 'Product Details'),
         actions: [
           Consumer<FavoritesProvider>(
             builder: (context, favoritesProvider, child) {
@@ -263,28 +329,37 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           children: [
             Container(
               width: double.infinity,
-              child: Image.network(
-                _burgerData!['imageUrl'],
-                width: double.infinity,
-                height: 250,
-                fit: BoxFit.cover,
-              ),
+              child: _burgerData?['imageUrl'] is String
+                  ? Image.network(
+                      _burgerData!['imageUrl'],
+                      width: double.infinity,
+                      height: 250,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Text("Error loading image"),
+                    )
+                  : const Text("Invalid Burger Image URL"),
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  _burgerData!['name'] ?? 'Burger Name',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
                 Row(
                   children: [
-                    const Icon(Icons.star, color: Colors.yellow),
-                    Text(_burgerData!['rating']?.toString() ?? 'N/A'),
+                    const Text(
+                      'Name: ', // Add "Name:" here
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      _burgerData?['name']?.toString() ?? 'Burger Name',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -295,7 +370,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               children: [
                 Row(
                   children: [
-                    Text(
+                    const Text(
                       'Quantidade: ',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -303,13 +378,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: () {
-                        setState(() {
-                          if (quantity > 1) {
-                            quantity--;
-                            _totalPrice =
-                                _burgerPrice * quantity; // Update total price
-                          }
-                        });
+                        if (mounted)
+                          setState(() {
+                            if (quantity > 1) {
+                              quantity--;
+                            }
+                            _updateTotalPrice();
+                          });
                       },
                     ),
                     Text(
@@ -319,11 +394,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     IconButton(
                       icon: const Icon(Icons.add),
                       onPressed: () {
-                        setState(() {
-                          quantity++;
-                          _totalPrice =
-                              _burgerPrice * quantity; // Update total price
-                        });
+                        if (mounted)
+                          setState(() {
+                            quantity++;
+                            _updateTotalPrice();
+                          });
                       },
                     ),
                   ],
@@ -331,46 +406,47 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               ],
             ),
             const SizedBox(height: 16),
+            const Text(
+              'descricao:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             Text(
-              _burgerData!['description'] ?? 'No description available',
+              _burgerData?['description']?.toString() ??
+                  'No description available',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Price: ${_burgerPrice.toStringAsFixed(2)}', // Display burger price
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 16),
             const Text(
-              'Adicionar',
+              'Adicionar Extras:',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
             ),
             const SizedBox(height: 8),
-            for (var extra in _extras)
+            for (var extraDoc in _extras)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    // Wrap image and text in a Row
                     children: [
-                      Image.network(
-                        // Display the image
-                        extra['imageUrl'],
-                        width: 50, // Adjust width as needed
-                        height: 50, // Adjust height as needed
-                        fit: BoxFit.cover,
-                      ),
-                      const SizedBox(width: 8), // Add some spacing
+                      extraDoc['imageUrl'] is String
+                          ? Image.network(
+                              extraDoc['imageUrl'],
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.error_outline),
+                            )
+                          : const Icon(Icons.image_not_supported, size: 50),
+                      const SizedBox(width: 8),
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(extra['name']),
-                          Text("Price: ${extra['price']}"),
+                          Text(extraDoc['name']?.toString() ?? 'Extra Name'),
+                          Text(
+                              "Price: ${extraDoc['price']?.toString() ?? 'N/A'}"),
                         ],
                       ),
                     ],
@@ -380,29 +456,29 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       IconButton(
                         icon: const Icon(Icons.remove),
                         onPressed: () {
-                          setState(() {
-                            if (_extraQuantities[extra['name']]! > 0) {
-                              _extraQuantities[extra['name']] =
-                                  _extraQuantities[extra['name']]! - 1;
-                              _totalPrice -= double.parse(extra['price']
-                                  .toString()); // Update total price
-                            }
-                          });
+                          if (mounted)
+                            setState(() {
+                              if (_extraQuantities[extraDoc.id]! > 0) {
+                                _extraQuantities[extraDoc.id] =
+                                    _extraQuantities[extraDoc.id]! - 1;
+                              }
+                              _updateTotalPrice();
+                            });
                         },
                       ),
                       Text(
-                        _extraQuantities[extra['name']]!.toString(),
+                        _extraQuantities[extraDoc.id]!.toString(),
                         style: const TextStyle(fontSize: 16),
                       ),
                       IconButton(
                         icon: const Icon(Icons.add),
                         onPressed: () {
-                          setState(() {
-                            _extraQuantities[extra['name']] =
-                                _extraQuantities[extra['name']]! + 1;
-                            _totalPrice += double.parse(extra['price']
-                                .toString()); // Update total price
-                          });
+                          if (mounted)
+                            setState(() {
+                              _extraQuantities[extraDoc.id] =
+                                  _extraQuantities[extraDoc.id]! + 1;
+                              _updateTotalPrice();
+                            });
                         },
                       ),
                     ],
@@ -413,7 +489,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        // Fixed bottom bar
+        color: Colors.black,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -422,30 +498,42 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               Text(
                 'Total: ${_totalPrice.toStringAsFixed(2)}',
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.white),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  _duplicateBurger(context,
-                      widget.burgerId); // Call the add to cart function
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  textStyle: const TextStyle(color: Colors.white),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 25,
+              Stack(
+                // Use Stack to overlay button and loading indicator
+                alignment: Alignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _isAddingToCart
+                        ? null
+                        : () {
+                            // Disable button when loading
+                            _addToCart(context);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      textStyle: const TextStyle(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: const Text('Add to Cart',
+                        style: TextStyle(
+                          color: Colors.black,
+                        )),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: Text('Add to Cart',
-                    style: TextStyle(
-                      color: Colors.white,
-                    )),
+                  if (_isAddingToCart) // Show loading indicator when _isAddingToCart is true
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white, // White color for loader
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

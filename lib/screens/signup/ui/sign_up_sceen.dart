@@ -23,6 +23,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black, // Set background color to black
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) async {
           if (state is AuthLoading) {
@@ -47,105 +48,175 @@ class _SignUpScreenState extends State<SignUpScreen> {
           }
         },
         builder: (context, state) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+          return _buildSignupPage(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSignupPage(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: SingleChildScrollView(
+          // Wrap with SingleChildScrollView for smaller screens
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.person_add,
+                  size: 80, color: Colors.white), // White Icon
+              const SizedBox(height: 16),
+              Text(
+                "Create Account",
+                style: TextStyles.font24Blue700Weight
+                    .copyWith(fontSize: 24, color: Colors.white), // White title
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Sign up now and start exploring all that our app has to offer.",
+                style: TextStyles.font14Grey400Weight.copyWith(
+                    fontSize: 14, color: Colors.white70), // White subtitle
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: nameController,
+                style: const TextStyle(
+                    color: Colors.white), // Input text color white
+                decoration: InputDecoration(
+                  labelText: "Full Name",
+                  labelStyle: const TextStyle(
+                      color: Colors.white70), // Label text color white
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide:
+                        const BorderSide(color: Colors.white54), // White border
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                        color: Colors.white), // White focused border
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                style: const TextStyle(
+                    color: Colors.white), // Input text color white
+                decoration: InputDecoration(
+                  labelText: "Phone Number",
+                  labelStyle: const TextStyle(
+                      color: Colors.white70), // Label text color white
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide:
+                        const BorderSide(color: Colors.white54), // White border
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                        color: Colors.white), // White focused border
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                style: const TextStyle(
+                    color: Colors.white), // Input text color white
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  labelStyle: const TextStyle(
+                      color: Colors.white70), // Label text color white
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide:
+                        const BorderSide(color: Colors.white54), // White border
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                        color: Colors.white), // White focused border
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                style: const TextStyle(
+                    color: Colors.white), // Input text color white
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  labelStyle: const TextStyle(
+                      color: Colors.white70), // Label text color white
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide:
+                        const BorderSide(color: Colors.white54), // White border
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                        color: Colors.white), // White focused border
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<AuthCubit>().signUpWithEmail(
+                      nameController.text,
+                      emailController.text,
+                      passwordController.text,
+                      phoneController.text);
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(110.0)),
+                  backgroundColor: Colors.white, // White button background
+                  foregroundColor: Colors.black, // Black button text
+                ),
+                child: const Text(
+                  "Sign Up",
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold), // Black "Sign Up" text
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.person_add, size: 80, color: Colors.blue),
-                  SizedBox(height: 16),
-                  Text(
-                    "Create Account",
-                    style: TextStyles.font24Blue700Weight.copyWith(fontSize: 24),
+                  const Text(
+                    "Already have an account? ",
+                    style: TextStyle(
+                        color: Colors
+                            .white70), // White "Already have an account?" text
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    "Sign up now and start exploring all that our app has to offer.",
-                    style: TextStyles.font14Grey400Weight.copyWith(fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24),
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: "Full Name",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    controller: phoneController,
-                    decoration: InputDecoration(
-                      labelText: "Phone Number",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<AuthCubit>().signUpWithEmail(
-                        nameController.text,
-                        emailController.text,
-                        passwordController.text,
-                        phoneController.text);
-                    },
-                    child: Text("Sign Up"),
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Already have an account? "),
-                      GestureDetector(
-                        onTap: () {
-                          context.pushNamed(Routes.loginScreen);
-                        },
-                        child: Text(
-                          "Sign In",
-                          style: TextStyles.font14Blue400Weight.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  Text("Or sign up with Google"),
-                  SizedBox(height: 8),
-                  InkWell(
+                  GestureDetector(
                     onTap: () {
-                      context.read<AuthCubit>().signInWithGoogle();
+                      context.pushNamed(Routes.loginScreen);
                     },
-                    child: SvgPicture.asset(
-                      'assets/svgs/google_logo.svg',
-                      width: 40,
-                      height: 40,
+                    child: Text(
+                      "Sign In",
+                      style: TextStyles.font14Blue400Weight.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // White "Sign In" text
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -155,7 +226,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ), // White loading indicator
       ),
     );
   }
@@ -164,12 +237,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
+        backgroundColor: Colors.grey[900], // Darker background for dialog
+        title: const Text(
+          'Error',
+          style: TextStyle(color: Colors.white),
+        ), // White title
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ), // White message
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            onPressed: () {
+              context.pushNamed(Routes.loginScreen);
+            },
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Colors.white),
+            ), // White OK button
           ),
         ],
       ),
@@ -180,12 +265,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
+        backgroundColor: Colors.grey[900], // Darker background for dialog
+        title: Text(
+          title,
+          style: const TextStyle(color: Colors.white),
+        ), // White title
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ), // White message
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Colors.white),
+            ), // White OK button
           ),
         ],
       ),

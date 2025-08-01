@@ -1,3 +1,4 @@
+// main.dart
 import 'package:auth_bloc/firebase_options.dart';
 import 'package:auth_bloc/logic/cubit/auth_cubit.dart';
 import 'package:auth_bloc/screens/product/product_details.dart';
@@ -8,8 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:device_preview/device_preview.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 import 'routing/app_router.dart';
 import 'routing/routes.dart';
 import 'theming/colors.dart';
@@ -24,23 +25,30 @@ Future<void> main() async {
     Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ),
-    ScreenUtil.ensureScreenSize(),
-    preloadSVGs(['assets/svgs/google_logo.svg'])
   ]);
 
-  FirebaseAuth.instance.authStateChanges().listen(
-    (user) {
-      if (user == null || !user.emailVerified) {
-        initialRoute = Routes.loginScreen;
-      } else {
-        initialRoute = Routes.mainScreen;
-      }
-    },
-  );
+  // Check if onboarding is completed
+  final prefs = await SharedPreferences.getInstance();
+  bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+
+  if (!onboardingCompleted) {
+    initialRoute =
+        Routes.onboardingScreen; // Route to onboarding if not completed
+  } else {
+    FirebaseAuth.instance.authStateChanges().listen(
+      (user) {
+        if (user == null || !user.emailVerified) {
+          initialRoute = Routes.loginScreen;
+        } else {
+          initialRoute = Routes.mainScreen;
+        }
+      },
+    );
+  }
 
   runApp(
     DevicePreview(
-      enabled: false,
+      enabled: true, // kDebugMode, // Enable only in debug mode if desired
       builder: (context) => ChangeNotifierProvider(
         create: (context) => FavoritesProvider(),
         child: MyApp(router: AppRouter()),
@@ -49,20 +57,8 @@ Future<void> main() async {
   );
 }
 
-Future<void> preloadSVGs(List<String> paths) async {
-  for (final path in paths) {
-    final loader = SvgAssetLoader(path);
-
-    await svg.cache.putIfAbsent(
-      loader.cacheKey(null),
-      () => loader.loadBytes(null),
-    );
-  }
-}
-
 class MyApp extends StatefulWidget {
   final AppRouter router;
-
   const MyApp({super.key, required this.router});
 
   @override
@@ -75,12 +71,12 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-
     _initializeApp();
   }
 
   Future<void> _initializeApp() async {
-    await Future.delayed(const Duration(seconds: 8));
+    await Future.delayed(
+        const Duration(seconds: 3)); // Reduced delay for faster testing
 
     if (mounted) {
       setState(() {
@@ -128,7 +124,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-
     properties.add(DiagnosticsProperty<AppRouter>(
         'router', widget.router)); // Use widget.router
   }

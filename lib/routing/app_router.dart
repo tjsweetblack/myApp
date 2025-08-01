@@ -1,6 +1,7 @@
 import 'package:auth_bloc/main.dart';
 import 'package:auth_bloc/screens/create_burger/create_burger.dart';
 import 'package:auth_bloc/screens/main_screen.dart';
+import 'package:auth_bloc/screens/my_burgers/burgers.dart';
 import 'package:auth_bloc/screens/orders/order_details/order_details.dart';
 import 'package:auth_bloc/screens/product/product_details.dart';
 import 'package:auth_bloc/screens/profile/profile.dart';
@@ -11,6 +12,7 @@ import '../logic/cubit/auth_cubit.dart';
 import '../screens/create_password/ui/create_password.dart';
 import '../screens/forget/ui/forget_screen.dart';
 import '../screens/login/ui/login_screen.dart';
+import '../screens/onboarding/main_onboarding.dart';
 import '../screens/signup/ui/sign_up_sceen.dart';
 import 'routes.dart';
 
@@ -75,18 +77,30 @@ class AppRouter {
         );
 
       case Routes.mainScreen:
-        return MaterialPageRoute(
-          builder: (_) => BlocProvider.value(
-            value: authCubit,
-            child: const MainScreen(),
-          ),
-        );
+        int initialIndex = 0; // Default to Home tab
+        if (settings.arguments != null && settings.arguments is int) {
+          initialIndex = settings.arguments as int; // Read argument if provided
+        }
+        return MaterialPageRoute(builder: (_) => MainScreen(initialTabIndex: initialIndex));
 
       case Routes.orderDetails:
+        final args = settings.arguments as Map<String, dynamic>?; // Receive arguments
+        final orderId = args?['orderId'] as String?;       // Extract orderId
+
+        if (orderId == null || orderId.isEmpty) {
+          // Handle case where orderId is missing or invalid
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text("Error")),
+              body: const Center(child: Text("Order ID is missing or invalid.")),
+            ),
+          );
+        }
+
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
             value: authCubit,
-            child: const OrderDetailsPage(),
+            child: OrderDetailsPage(orderId: orderId), // Pass extracted orderId
           ),
         );
 
@@ -98,12 +112,23 @@ class AppRouter {
           ),
         );
 
+        case Routes.myCustomBurgersScreen:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider.value(
+            value: authCubit,
+            child: MyCustomBurgersScreen(),
+          ),
+        );
+
+      case Routes.onboardingScreen: // Add onboarding route
+        return MaterialPageRoute(builder: (_) => const mainOnboarding());
+
       case Routes.productDetails:
         return MaterialPageRoute(
           builder: (_) => BlocProvider.value(
             value: authCubit,
             child: ProductDetailsPage(
-              burgerId: '',
+              burgerId: '', // You might need to adjust this if productDetails needs burgerId from arguments
             ),
           ),
         );
