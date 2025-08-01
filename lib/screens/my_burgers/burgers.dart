@@ -416,7 +416,7 @@ class _MyCustomBurgersScreenState extends State<MyCustomBurgersScreen> {
         return Theme(
           // Apply theme for AlertDialog
           data: Theme.of(context).copyWith(
-            dialogTheme: const DialogTheme(
+            dialogTheme: const DialogThemeData(
               backgroundColor: Colors.black, // Black background for dialog
             ),
           ),

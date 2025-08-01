@@ -165,7 +165,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           return Theme(
             // Apply theme for AlertDialog
             data: Theme.of(context).copyWith(
-              dialogTheme: DialogTheme(
+              dialogTheme: DialogThemeData(
                 backgroundColor: Colors.black, // Black background for dialog
               ),
             ),

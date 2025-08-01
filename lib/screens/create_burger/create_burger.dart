@@ -44,13 +44,13 @@ class BurgerApp extends StatelessWidget {
             textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
         ),
-        dialogTheme: DialogTheme(
+        dialogTheme: DialogThemeData(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
@@ -240,11 +240,9 @@ class _BurgerBuilderScreenState extends State<BurgerBuilderScreen> {
       builder: (BuildContext context) {
         return Theme(
           data: Theme.of(context).copyWith(
-            dialogTheme: const DialogTheme(
-              backgroundColor: Colors.black, // Use DialogTheme.backgroundColor
-            ),
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(color: Colors.white),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Colors.black,
+              contentTextStyle: TextStyle(color: Colors.white),
             ),
           ),
           child: AlertDialog(
@@ -429,7 +427,7 @@ class _BurgerBuilderScreenState extends State<BurgerBuilderScreen> {
           return Theme(
             // Apply theme for AlertDialog
             data: Theme.of(context).copyWith(
-              dialogTheme: const DialogTheme(
+              dialogTheme: const DialogThemeData(
                 backgroundColor: Colors.black, // Black background for dialog
               ),
             ),
